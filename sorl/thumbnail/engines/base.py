@@ -97,12 +97,12 @@ class EngineBase(object):
             )
         thumbnail.write(raw_data)
 
-    def get_image_ratio(self, image, options):
+    def get_image_ratio(self, image, options=None):
         """
         Calculates the image ratio. If cropbox option is used, the ratio
         may have changed.
         """
-        cropbox = options['cropbox']
+        cropbox = options and options['cropbox'] or None
         if cropbox:
             x, y, x2, y2 = parse_cropbox(cropbox)
             x = x2 - x
