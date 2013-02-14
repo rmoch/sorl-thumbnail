@@ -3,6 +3,7 @@ from sorl.thumbnail.helpers import tokey, serialize
 from sorl.thumbnail.images import ImageFile
 from sorl.thumbnail import default
 from sorl.thumbnail.parsers import parse_geometry
+from sorl.thumbnail.helpers import toint
 
 
 EXTENSIONS = {
@@ -62,7 +63,7 @@ class ThumbnailBackend(object):
             source.set_size(size)
             self._create_thumbnail(source_image, geometry_string, options,
                                    thumbnail)
-            self._create_alternative_resolutions(source_image, geometry_string,
+            self._create_alternative_resolutions(source, geometry_string,
                                                  options, thumbnail.name)
         # If the thumbnail exists we don't create it, the other option is
         # to delete and write but this could lead to race conditions so I
@@ -94,23 +95,24 @@ class ThumbnailBackend(object):
         size = default.engine.get_image_size(image)
         thumbnail.set_size(size)
 
-    def _create_alternative_resolutions(self, source_image, geometry_string,
-                                        options, name):
+    def _create_alternative_resolutions(self, source, geometry_string, options, name):
         """
         Creates the thumbnail by using default.engine with multiple output
         sizes.  Appends @<ratio>x to the file name.
         """
         if not options['alternative_resolutions']:
             return
-
-        ratio = default.engine.get_image_ratio(source_image)
-        geometry = parse_geometry(geometry_string, ratio)
+        
+        source_image = default.engine.get_image(source)
+        ratio = default.engine.get_image_ratio(source_image, options)
+        geometry_orig = parse_geometry(geometry_string, ratio)
         file_type = name.split('.')[len(name.split('.'))-1]
 
-        for resolution in options['alternative_resolutions']:
-            geometry = (geometry[0]*resolution, geometry[1]*resolution)
+        for res in options['alternative_resolutions']:
+            geometry = (toint(geometry_orig[0]*res), toint(geometry_orig[1]*res))
             thumbnail_name = name.replace(".%s" % file_type,
-                                          "@%sx.%s" % (resolution, file_type))
+                                          "@%sx.%s" % (res, file_type))
+            source_image = default.engine.get_image(source)
             image = default.engine.create(source_image, geometry, options)
             thumbnail = ImageFile(thumbnail_name, default.storage)
             default.engine.write(image, options, thumbnail)
