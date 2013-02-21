@@ -1,6 +1,6 @@
 from sorl.thumbnail.conf import settings, defaults as default_settings
 from sorl.thumbnail.helpers import tokey, serialize
-from sorl.thumbnail.images import ImageFile
+from sorl.thumbnail.images import ImageFile, DummyImageFile
 from sorl.thumbnail import default
 from sorl.thumbnail.parsers import parse_geometry
 from sorl.thumbnail.helpers import toint
@@ -57,7 +57,14 @@ class ThumbnailBackend(object):
         if not thumbnail.exists():
             # We have to check exists() because the Storage backend does not
             # overwrite in some implementations.
-            source_image = default.engine.get_image(source)
+            try: 
+                source_image = default.engine.get_image(source)
+            except IOError:
+                if settings.THUMBNAIL_IMAGE_MISSING_DUMMY:
+                    return DummyImageFile(geometry_string)
+                else:
+                    raise
+            
             # We might as well set the size since we have the image in memory
             size = default.engine.get_image_size(source_image)
             source.set_size(size)
