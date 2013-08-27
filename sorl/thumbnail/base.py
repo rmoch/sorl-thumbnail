@@ -9,8 +9,10 @@ from sorl.thumbnail.helpers import toint
 EXTENSIONS = {
     'JPEG': 'jpg',
     'PNG': 'png',
+    'GIF': 'gif',
 }
 
+AUTO_FORMATS = ['gif']
 
 class ThumbnailBackend(object):
     """
@@ -39,6 +41,10 @@ class ThumbnailBackend(object):
         options given. First it will try to get it from the key value store,
         secondly it will create it.
         """
+        if not options.get('format'):
+            ext = str(file_).split('.')[-1].lower()
+            options['format'] = ext.upper() if ext in AUTO_FORMATS else settings.THUMBNAIL_FORMAT
+                    
         source = ImageFile(file_)
         for key, value in self.default_options.iteritems():
             options.setdefault(key, value)

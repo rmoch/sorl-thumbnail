@@ -1,4 +1,6 @@
-from pgmagick import Blob, ColorspaceType, Geometry, Image, ImageType
+from functools import wraps
+
+from pgmagick import Blob, ColorspaceType, Geometry, Image, ImageType, ImageList
 from pgmagick import InterlaceType, OrientationType
 from sorl.thumbnail.engines.base import EngineBase
 
@@ -10,12 +12,37 @@ except ImportError:
         return b64decode(blob.base64())
 
 
+def imagelist_looper(func):
+    def _decorator(self, image, *args):
+        if not isinstance(image, ImageList):
+            image = [image]
+        for image_ in image:
+            out = func(self, image_, *args)
+            if not out.__class__.__name__ == 'Image':
+                return out
+        if isinstance(image, list):
+            return image[0]
+        return image
+    return wraps(func)(_decorator)
+
+    
 class Engine(EngineBase):
     def get_image(self, source):
         blob = Blob()
         blob.update(source.read())
-        return Image(blob)
-
+        if source.name.lower().endswith('.gif'):
+            image = ImageList()
+            image.readImages(blob)
+            image.coalesceImags()
+        else:
+            image = Image(blob)
+        return image
+    
+    @imagelist_looper
+    def get_image_ratio(self, image, options=None):
+        return super(Engine, self).get_image_ratio(image, options)
+        
+    @imagelist_looper
     def get_image_size(self, image):
         geometry = image.size()
         return geometry.width(), geometry.height()
@@ -25,12 +52,14 @@ class Engine(EngineBase):
         blob.update(raw_data)
         im = Image(blob)
         return im.isValid()
-
+    
+    @imagelist_looper
     def _cropbox(self, image, x, y, x2, y2):
         geometry = Geometry(x2-x, y2-y, x, y)
         image.crop(geometry)
         return image
-
+    
+    @imagelist_looper
     def _orientation(self, image):
         orientation = image.orientation()
         if orientation == OrientationType.TopRightOrientation:
@@ -52,7 +81,8 @@ class Engine(EngineBase):
         image.orientation(OrientationType.TopLeftOrientation)
 
         return image
-
+    
+    @imagelist_looper
     def _colorspace(self, image, colorspace):
         if colorspace == 'RGB':
             image.type(ImageType.TrueColorMatteType)
@@ -61,23 +91,30 @@ class Engine(EngineBase):
         else:
             return image
         return image
-
+    
     def _scale(self, image, width, height):
         geometry = Geometry(width, height)
-        image.scale(geometry)
+        if isinstance(image, ImageList):
+            image.scaleImages(geometry)
+        else:
+            image.scale(geometry)
         return image
-
+    
+    @imagelist_looper
     def _crop(self, image, width, height, x_offset, y_offset):
         geometry = Geometry(width, height, x_offset, y_offset)
         image.crop(geometry)
         return image
 
     def _get_raw_data(self, image, format_, quality, progressive=False):
-        image.magick(format_.encode('utf8'))
-        image.quality(quality)
-        if format_ == 'JPEG' and progressive:
-            image.interlaceType(InterlaceType.LineInterlace)
         blob = Blob()
-        image.write(blob)
+        if isinstance(image, ImageList):
+            image.writeImages(blob)
+        else:
+            image.magick(format_.encode('utf8'))
+            image.quality(quality)
+            if format_ == 'JPEG' and progressive:
+                image.interlaceType(InterlaceType.LineInterlace)
+            image.write(blob)
         return get_blob_data(blob)
 
