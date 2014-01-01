@@ -30,7 +30,7 @@ class Engine(EngineBase):
         image['options']['quality'] = options['quality']
         args = settings.THUMBNAIL_CONVERT.split(' ')
         args.append(image['source'])
-        for k, v in image['options'].iteritems():
+        for k, v in image['options'].items():
             args.append('-%s' % k)
             if v is not None:
                 args.append('%s' % v)

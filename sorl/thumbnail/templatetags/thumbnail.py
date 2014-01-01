@@ -86,7 +86,7 @@ class ThumbnailNode(ThumbnailNodeBase):
         options = {}
         for key, expr in self.options:
             noresolve = {u'True': True, u'False': False, u'None': None}
-            value = noresolve.get(unicode(expr), expr.resolve(context))
+            value = noresolve.get(str(expr), expr.resolve(context))
             if key == 'options':
                 options.update(value)
             else:
@@ -155,7 +155,7 @@ def margin(file_, geometry_string):
     margin[2] = ey / 2
     if ey % 2:
         margin[2] += 1
-    return ' '.join([ '%spx' % n for n in margin ])
+    return ' '.join([ '%spx' % int(n) for n in margin ])
 
 
 @register.filter

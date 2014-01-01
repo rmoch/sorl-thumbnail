@@ -32,6 +32,7 @@ def tokey(*args):
     Computes a (hopefully) unique key from arguments given.
     """
     salt = '||'.join([smart_str(arg) for arg in args])
+    salt = salt.encode('utf-8')
     hash_ = hashlib.md5(salt)
     return hash_.hexdigest()
 
@@ -52,7 +53,7 @@ def get_module_class(class_path):
     try:
         mod_name, cls_name = class_path.rsplit('.', 1)
         mod = import_module(mod_name)
-    except ImportError, e:
+    except ImportError as e:
         raise ImproperlyConfigured(('Error importing module %s: "%s"' %
                                    (mod_name, e)))
     return getattr(mod, cls_name)

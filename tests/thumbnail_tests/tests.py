@@ -30,6 +30,7 @@ logging.getLogger('sorl.thumbnail').addHandler(handler)
 
 class StorageTestCase(unittest.TestCase):
     def setUp(self):
+        self.maxDiff = None
         name = 'org.jpg'
         os.makedirs(settings.MEDIA_ROOT)
         fn = pjoin(settings.MEDIA_ROOT, name)
@@ -42,23 +43,23 @@ class StorageTestCase(unittest.TestCase):
         log = slog.stop_log()
         actions = [
             # first see if the file exists
-            'exists: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4.jpg',
+            'exists: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02.jpg',
             # open the original for thumbnailing
             'open: org.jpg',
             # save the file
-            'save: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4.jpg',
+            'save: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02.jpg',
             # check for filename
-            'get_available_name: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4.jpg',
+            'get_available_name: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02.jpg',
             # called by get_available_name
-            'exists: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4.jpg',
+            'exists: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02.jpg',
             # save the 1.5 resolution version
-            'save: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@1.5x.jpg',
-            'get_available_name: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@1.5x.jpg',
-            'exists: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@1.5x.jpg',
+            'save: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@1.5x.jpg',
+            'get_available_name: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@1.5x.jpg',
+            'exists: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@1.5x.jpg',
             # save the 2 resolution version
-            'save: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@2x.jpg',
-            'get_available_name: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@2x.jpg',
-            'exists: test/cache/cc/33/cc33e9e8b2355e7e2a9437319c046ad4@2x.jpg'
+            'save: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@2x.jpg',
+            'get_available_name: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@2x.jpg',
+            'exists: test/cache/ff/3d/ff3d0f5fa6e8da5924298ce7354a9d02@2x.jpg'
         ]
         self.assertEqual(log, actions)
 
@@ -298,13 +299,13 @@ class TemplateTestCaseA(SimpleTestCaseBase):
         val = render_to_string('thumbnail6.html', {
             'item': item,
         }).strip()
-        self.assertEqual(val, ('<a href="/media/test/cache/ee/75/ee75afefa6c50e2bb69040bd230adb8c.jpg">'
-                               '<img src="/media/test/cache/f2/dd/f2ddc6972adc006de1635e4b30141267.jpg" width="400" height="400">'
+        self.assertEqual(val, ('<a href="/media/test/cache/3b/41/3b4108258ee3030dd464ba1e831573dd.jpg">'
+                               '<img src="/media/test/cache/28/a7/28a7069a70544d9b61cc8fa43da341fa.jpg" width="400" height="400">'
                                '</a>'))
 
     def test_serialization_options(self):
         item = Item.objects.get(image='500x500.jpg')
-        for j in xrange(0, 20):
+        for j in range(0, 20):
             # we could be lucky...
             val0 = render_to_string('thumbnail7.html', {
                 'item': item,
@@ -400,21 +401,21 @@ class TemplateTestCaseClient(unittest.TestCase):
         params = {
             'THUMBNAIL_DEBUG': False,
         }
-        for k, v in params.iteritems():
+        for k, v in params.items():
             self.org_settings[k] = getattr(settings, k)
             setattr(settings, k, v)
 
     def testEmptyError(self):
         client = Client()
         response = client.get('/thumbnail9.html')
-        self.assertEqual(response.content.strip(), '<p>empty</p>')
+        self.assertEqual(response.content.strip(), b'<p>empty</p>')
         from django.core.mail import outbox
         self.assertEqual(outbox[0].subject, '[sorl-thumbnail] ERROR: /thumbnail9.html')
         end = outbox[0].body.split('\n\n')[-2][-20:-1]
         self.assertEqual(end, 'tests/media/invalid')
 
     def tearDown(self):
-        for k, v in self.org_settings.iteritems():
+        for k, v in self.org_settings.items():
             setattr(settings, k, v)
 
 
@@ -448,7 +449,7 @@ class CropTestCase(unittest.TestCase):
             values = im.getpixel((x, y))
             if not isinstance(values, (tuple, list)):
                 values = [values]
-            return reduce(operator.add, values) / len(values)
+            return sum(values) / len(values)
         for crop in ('center', '88% 50%', '50px'):
             th = self.backend.get_thumbnail(self.portrait, '100x100', crop=crop)
             engine = PILEngine()
@@ -462,15 +463,15 @@ class CropTestCase(unittest.TestCase):
             th = self.backend.get_thumbnail(self.portrait, '100x100', crop=crop)
             engine = PILEngine()
             im = engine.get_image(th)
-            for x in xrange(0, 99, 10):
-                for y in xrange(0, 99, 10):
+            for x in range(0, 99, 10):
+                for y in range(0, 99, 10):
                     self.assertEqual(250 < mean_pixel(x, y) <= 255, True)
         for crop in ('bottom', '100%', '100px'):
             th = self.backend.get_thumbnail(self.portrait, '100x100', crop=crop)
             engine = PILEngine()
             im = engine.get_image(th)
-            for x in xrange(0, 99, 10):
-                for y in xrange(0, 99, 10):
+            for x in range(0, 99, 10):
+                for y in range(0, 99, 10):
                     self.assertEqual(0 <= mean_pixel(x, y) < 5, True)
 
     def testLandscapeCrop(self):
@@ -478,7 +479,7 @@ class CropTestCase(unittest.TestCase):
             values = im.getpixel((x, y))
             if not isinstance(values, (tuple, list)):
                 values = [values]
-            return reduce(operator.add, values) / len(values)
+            return sum(values) / len(values)
         for crop in ('center', '50% 200%', '50px 700px'):
             th = self.backend.get_thumbnail(self.landscape, '100x100', crop=crop)
             engine = PILEngine()
@@ -492,15 +493,15 @@ class CropTestCase(unittest.TestCase):
             th = self.backend.get_thumbnail(self.landscape, '100x100', crop=crop)
             engine = PILEngine()
             im = engine.get_image(th)
-            for x in xrange(0, 99, 10):
-                for y in xrange(0, 99, 10):
+            for x in range(0, 99, 10):
+                for y in range(0, 99, 10):
                     self.assertEqual(250 < mean_pixel(x, y) <= 255, True)
         for crop in ('right', '100%', '100px'):
             th = self.backend.get_thumbnail(self.landscape, '100x100', crop=crop)
             engine = PILEngine()
             im = engine.get_image(th)
-            for x in xrange(0, 99, 10):
-                for y in xrange(0, 99, 10):
+            for x in range(0, 99, 10):
+                for y in range(0, 99, 10):
                     self.assertEqual(0 <= mean_pixel(x, y) < 5, True)
 
     def tearDown(self):
@@ -514,7 +515,7 @@ class DummyTestCase(unittest.TestCase):
         params = {
             'THUMBNAIL_DUMMY': True,
         }
-        for k, v in params.iteritems():
+        for k, v in params.items():
             self.org_settings[k] = getattr(settings, k)
             setattr(settings, k, v)
 
@@ -532,7 +533,7 @@ class DummyTestCase(unittest.TestCase):
         self.assertEqual(val, '<img src="http://dummyimage.com/600x400" width="600" height="400">')
 
     def tearDown(self):
-        for k, v in self.org_settings.iteritems():
+        for k, v in self.org_settings.items():
             setattr(settings, k, v)
 
 
@@ -585,7 +586,7 @@ class TestInputCase(unittest.TestCase):
         th = get_thumbnail(self.name, '200x200')
         self.assertEqual(
             th.url,
-            '/media/test/cache/e7/2b/e72b64151559ea9c5cdd6aefc626bb7f.jpg'
+            '/media/test/cache/75/0e/750e037ccfbd0f64be7be276700c810e.jpg'
             )
 
     def tearDown(self):

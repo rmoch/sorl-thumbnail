@@ -18,7 +18,7 @@ import sys
 sys.path.insert(0, os.path.pardir)
 import sorl
 
-for j in xrange(0, len(sphinx.__version__)):
+for j in range(0, len(sphinx.__version__)):
     try:
         version = float(sphinx.__version__[:-j])
         break

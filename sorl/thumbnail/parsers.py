@@ -94,7 +94,7 @@ def parse_cropbox(cropbox):
     """
     Returns x, y, x2, y2 tuple for cropping.
     """
-    if isinstance(cropbox, unicode):
+    if isinstance(cropbox, str):
         return tuple([int(x.strip()) for x in cropbox.split(',')])
     else:
         return tuple(cropbox)
