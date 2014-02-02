@@ -1,9 +1,9 @@
 import re
-import urllib
+from six.moves import urllib
 from django.core.files.base import File, ContentFile
 from django.core.files.storage import Storage, default_storage
 from django.core.urlresolvers import reverse
-from django.utils.encoding import force_str
+from django.utils.encoding import smart_str
 from django.utils.functional import LazyObject
 from django.utils import simplejson
 from sorl.thumbnail.conf import settings
@@ -74,7 +74,7 @@ class ImageFile(BaseImageFile):
         if hasattr(file_, 'name'):
             self.name = file_.name
         else:
-            self.name = force_str(file_)
+            self.name = smart_str(file_)
         # figure out storage
         if storage is not None:
             self.storage = storage
