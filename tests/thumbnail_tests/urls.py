@@ -1,4 +1,8 @@
-from django.conf.urls import patterns, url, include
+# -*- coding: utf-8 -*-
+try:
+    from django.conf.urls import patterns, url
+except ImportError:
+    from django.conf.urls.defaults import patterns, url  # keep django <1.4 compatibility
 from django.conf import settings
 from django.views.generic import TemplateView
 
