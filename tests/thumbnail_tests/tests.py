@@ -1,4 +1,5 @@
-#coding=utf-8
+# -*- coding: utf-8 -*-
+
 import logging
 import operator
 import os
@@ -256,7 +257,7 @@ class SimpleTestCase(SimpleTestCaseBase):
         p2 = Popen(['grep', '-c', 'Quality: 50'], stdin=p1.stdout, stdout=PIPE)
         p1.stdout.close()
         output = p2.communicate()[0].strip()
-        self.assertEqual(output, '1')
+        self.assertEqual(output, b'1')
 
     def test_image_file_deserialize(self):
         im = ImageFile(Item.objects.get(image='500x500.jpg').image)
@@ -265,7 +266,7 @@ class SimpleTestCase(SimpleTestCaseBase):
             default.kvstore.get(im).serialize_storage(),
             'thumbnail_tests.storage.TestStorage',
             )
-        im = ImageFile('http://www.aino.se/media/i/logo.png')
+        im = ImageFile('http://www.aino.com/negative.png')
         default.kvstore.set(im)
         self.assertEqual(
             default.kvstore.get(im).serialize_storage(),
@@ -332,21 +333,23 @@ class TemplateTestCaseA(SimpleTestCaseBase):
         self.assertEqual(val0, val1)
 
     def test_progressive(self):
+    # fails with graphicmagick lib, works with imagemagick
         im = Item.objects.get(image='500x500.jpg').image
         th = self.backend.get_thumbnail(im, '100x100', progressive=True)
         path = pjoin(settings.MEDIA_ROOT, th.name)
         p = Popen(['identify', '-verbose', path], stdout=PIPE)
         p.wait()
-        m = re.search('Interlace: JPEG', p.stdout.read())
+        m = re.search(b'Interlace: JPEG', p.stdout.read())
         self.assertEqual(bool(m), True)
 
     def test_nonprogressive(self):
+        # fails with graphicmagick lib, works with imagemagick
         im = Item.objects.get(image='500x500.jpg').image
         th = self.backend.get_thumbnail(im, '100x100', progressive=False)
         path = pjoin(settings.MEDIA_ROOT, th.name)
         p = Popen(['identify', '-verbose', path], stdout=PIPE)
         p.wait()
-        m = re.search('Interlace: None', p.stdout.read())
+        m = re.search(b'Interlace: None', p.stdout.read())
         self.assertEqual(bool(m), True)
 
     def test_orientation(self):
@@ -385,10 +388,10 @@ class TemplateTestCaseB(unittest.TestCase):
 
     def testPortrait(self):
         val = render_to_string('thumbnail4.html', {
-            'source': 'http://www.aino.se/media/i/logo.png',
+            'source': 'http://www.aino.com/negative.png',
             'dims': 'x666',
         }).strip()
-        self.assertEqual(val, '<img src="/media/test/cache/11/b5/11b5d54b6ab2c9cda20a064153f90d2f.jpg" width="1985" height="666" class="landscape">')
+        self.assertEqual(val, '<img src="/media/test/cache/ec/19/ec19b545e86957f34e4e796e059a1578.jpg" width="1985" height="666" class="landscape">')
 
     def testEmpty(self):
         val = render_to_string('thumbnail5.html', {}).strip()
